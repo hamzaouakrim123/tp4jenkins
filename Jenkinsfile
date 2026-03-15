@@ -1,33 +1,39 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.11-slim'
+            args '--network host -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     stages {
 
         stage('Clone Repository') {
-    steps {
-        git branch: 'main', url: 'https://github.com/hamzaouakrim123/tp4jenkins.git'
-    }
-}
+            steps {
+                git branch: 'main', url: 'https://github.com/hamzaouakrim123/tp4jenkins.git'
+            }
+        }
+
         stage('Install Dependencies') {
             steps {
-                sh 'pip install -r requirements.txt --break-system-packages'
+                sh 'pip install -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'python3 -m pytest test_app.py -v'
+                sh 'python -m pytest test_app.py -v'
             }
         }
 
         stage('SAST Scan - SonarQube') {
             steps {
                 sh '''
-                docker run --rm \
-                  -e SONAR_HOST_URL="http://host.docker.internal:9000" \
-                  -e SONAR_LOGIN="sqp_5295ea4a1e7ff9655cbb534d72e718cb9e487e3a" \
-                  -v $WORKSPACE:/usr/src \
-                  sonarsource/sonar-scanner-cli
+                pip install pysonar-scanner
+                pysonar-scanner \
+                  -Dsonar.projectKey=TP4Jenkins \
+                  -Dsonar.host.url=http://host.docker.internal:9000 \
+                  -Dsonar.login=sqp_5295ea4a1e7ff9655cbb534d72e718cb9e487e3a
                 '''
             }
         }
@@ -35,7 +41,7 @@ pipeline {
         stage('SCA Scan - OWASP') {
             steps {
                 sh '''
-                pip3 install safety --break-system-packages
+                pip install safety
                 safety check --full-report || true
                 '''
             }
