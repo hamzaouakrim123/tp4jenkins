@@ -4,11 +4,10 @@ pipeline {
     stages {
 
         stage('Clone Repository') {
-            steps {
-                git 'https://github.com/hamzaouakrim123/tp4jenkins.git'
-            }
-        }
-
+    steps {
+        git branch: 'main', url: 'https://github.com/hamzaouakrim123/tp4jenkins.git'
+    }
+}
         stage('Install Dependencies') {
             steps {
                 sh 'pip install -r requirements.txt --break-system-packages'
